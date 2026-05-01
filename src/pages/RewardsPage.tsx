@@ -1,8 +1,10 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BADGES, MODULES, getLevelForXP } from '../data/modules';
 import type { PlayerProfile } from '../hooks/useProgress';
 import XPBar from '../components/ui/XPBar';
+import { fetchLeaderboard, upsertScore } from '../lib/supabase';
+import type { LeaderboardEntry } from '../lib/supabase';
 
 interface Props {
   profile: PlayerProfile;
@@ -13,11 +15,30 @@ export default function RewardsPage({ profile, onAddToLeaderboard }: Props) {
   const level = getLevelForXP(profile.xp);
   const allCompleted = profile.completedModules.length === MODULES.length;
   const printRef = useRef<HTMLDivElement>(null);
+  const [globalBoard, setGlobalBoard] = useState<LeaderboardEntry[]>([]);
+  const [boardLoading, setBoardLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleAddLeaderboard = () => {
-    if (profile.name) {
-      onAddToLeaderboard(profile.name, profile.xp, profile.avatar);
-    }
+  useEffect(() => {
+    fetchLeaderboard().then(data => { setGlobalBoard(data); setBoardLoading(false); });
+  }, []);
+
+  const handleAddLeaderboard = async () => {
+    if (!profile.name) return;
+    setSubmitting(true);
+    await upsertScore({
+      name: profile.name,
+      avatar: profile.avatar,
+      xp: profile.xp,
+      badges: profile.earnedBadges.length,
+      modules_done: profile.completedModules.length,
+    });
+    onAddToLeaderboard(profile.name, profile.xp, profile.avatar);
+    const updated = await fetchLeaderboard();
+    setGlobalBoard(updated);
+    setSubmitting(false);
+    setSubmitted(true);
   };
 
   const handlePrint = () => {
@@ -131,33 +152,48 @@ export default function RewardsPage({ profile, onAddToLeaderboard }: Props) {
         </div>
       </div>
 
-      {/* Leaderboard section */}
+      {/* Global Leaderboard */}
       <div className="card-dark">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-black text-white">📊 Local Leaderboard</h2>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <h2 className="text-xl font-black text-white">🌍 Global Leaderboard</h2>
+            <p className="text-xs text-gray-500">Powered by Supabase — compete with players worldwide!</p>
+          </div>
           {profile.name && (
-            <button onClick={handleAddLeaderboard} className="btn-secondary py-2 px-4 text-sm">
-              + Add My Score
+            <button
+              onClick={handleAddLeaderboard}
+              disabled={submitting}
+              className={`btn-secondary py-2 px-4 text-sm ${submitting ? 'opacity-60' : ''}`}
+            >
+              {submitting ? '⏳ Saving…' : submitted ? '✅ Score Updated!' : '+ Submit My Score'}
             </button>
           )}
         </div>
-        {profile.leaderboardEntries.length > 0 ? (
+        {boardLoading ? (
+          <div className="text-center py-8 text-gray-500 animate-pulse">Loading scores…</div>
+        ) : globalBoard.length > 0 ? (
           <div className="space-y-2">
-            {profile.leaderboardEntries.map((entry, i) => (
+            {globalBoard.map((entry, i) => (
               <motion.div
                 key={entry.name + i}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06 }}
+                transition={{ delay: i * 0.05 }}
                 className={`flex items-center gap-3 p-3 rounded-xl ${
-                  i === 0 ? 'bg-yellow-900/40 border border-yellow-700' : 'bg-garage-dark'
+                  entry.name === profile.name
+                    ? 'bg-garage-yellow/10 border border-garage-yellow'
+                    : i === 0 ? 'bg-yellow-900/30 border border-yellow-800' : 'bg-garage-dark'
                 }`}
               >
                 <span className="text-2xl font-black w-8 text-center">
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
                 </span>
                 <span className="text-xl">{entry.avatar}</span>
-                <span className="flex-1 font-bold text-white">{entry.name}</span>
+                <span className="flex-1 font-bold text-white">
+                  {entry.name}
+                  {entry.name === profile.name && <span className="text-garage-yellow text-xs ml-2">(you)</span>}
+                </span>
+                <span className="text-xs text-gray-500 hidden sm:block">{entry.badges} badges</span>
                 <span className="text-garage-yellow font-black">{entry.xp} XP</span>
               </motion.div>
             ))}
