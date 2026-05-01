@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    @apply bg-garage-darker text-white font-body;
+    min-height: 100vh;
+    margin: 0;
+  }
+  h1, h2, h3, h4, h5, h6 { @apply font-display font-bold; }
+  #root {
+    width: 100%;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-garage-red hover:bg-red-600 text-white font-bold py-3 px-6 rounded-2xl
+           transition-all duration-200 transform hover:scale-105 active:scale-95
+           shadow-lg text-lg cursor-pointer;
+  }
+  .btn-secondary {
+    @apply bg-garage-yellow hover:bg-yellow-400 text-garage-dark font-bold py-3 px-6 rounded-2xl
+           transition-all duration-200 transform hover:scale-105 active:scale-95
+           shadow-lg text-lg cursor-pointer;
+  }
+  .btn-ghost {
+    @apply border-2 border-garage-metal hover:border-white text-white font-bold py-3 px-6
+           rounded-2xl transition-all duration-200 transform hover:scale-105 active:scale-95 text-lg cursor-pointer;
+  }
+  .card {
+    @apply bg-garage-grey rounded-3xl p-6 shadow-xl border border-garage-lightgrey;
+  }
+  .card-dark {
+    @apply bg-garage-dark rounded-3xl p-6 shadow-xl border border-garage-grey;
+  }
+  .xp-bar { @apply h-4 rounded-full bg-garage-lightgrey overflow-hidden; }
+  .xp-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-garage-yellow to-garage-orange
+           transition-all duration-700 ease-out;
+  }
+}
+
+@keyframes pistonMove {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(28px); }
+}
+@keyframes flicker {
+  0%, 100% { opacity: 1; transform: scale(1) translateX(-50%); }
+  33% { opacity: 0.7; transform: scale(0.85) translateX(-50%); }
+  66% { opacity: 0.9; transform: scale(1.1) translateX(-50%); }
+}
+@keyframes gearSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes gearSpinReverse { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+@keyframes exhaustPuff {
+  0% { opacity: 0.8; transform: translateX(0) scale(0.5); }
+  100% { opacity: 0; transform: translateX(40px) scale(1.5); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-piston { animation: pistonMove 1s ease-in-out infinite; }
+.animate-flicker { animation: flicker 0.35s ease-in-out infinite; }
+.animate-gear { animation: gearSpin 3s linear infinite; }
+.animate-gear-reverse { animation: gearSpinReverse 2.5s linear infinite; }
+.animate-exhaust { animation: exhaustPuff 1.5s ease-out infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0F0F1A; }
+::-webkit-scrollbar-thumb { background: #4A5568; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #718096; }
